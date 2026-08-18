@@ -12,8 +12,8 @@ npx skills@latest add NodexApp/skills
 Install this exact release:
 
 ```sh
-npx skills@latest add https://github.com/NodexApp/skills/tree/v0.2.1
+npx skills@latest add https://github.com/NodexApp/skills/tree/v0.2.2
 ```
 
-This artifact matches Nodex 0.2.1. The Skill requires the local Nodex CLI
+This artifact matches Nodex 0.2.2. The Skill requires the local Nodex CLI
 and Core; it does not provide remote access to a user's local Nodex data.

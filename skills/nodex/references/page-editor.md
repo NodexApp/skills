@@ -1,113 +1,130 @@
-# Page editor
+# Page editing and Files
 
-Use this reference for Page discovery and semantic Page or Block writes. Run the
-capability and context preflight in `SKILL.md` first.
+Use actual IDs and validators returned by Nodex in place of the placeholders.
+Consult leaf help for unfamiliar parameters; content discovery does not require
+repeating the full capability and context workflow on every command.
 
-## Discover and read
-
-Start broad only when necessary:
-
-```sh
-nodex tree --json
-nodex rg --json "launch plan"
-nodex read --json LAB-13
-nodex read --json @PAGE_ID
-nodex read --json --meta @PAGE_ID
-nodex sed --json -n '1,80p' @PAGE_ID
-nodex history --json @PAGE_ID
-```
-
-Use `--database @DATABASE_ID` or `--page LAB-13` / `--page @PAGE_ID` to narrow
-discovery. A current or historical Page key resolves inside the selected
-Project and the result reports both current `page_key` and canonical `page_id`.
-Search results, keys, and title paths are discovery aids; use the returned full
-`@PAGE_ID` for writes and stable deeplinks.
-
-Page bodies are canonical Nested Markdown. Read
-[nested-markdown.md](nested-markdown.md) before authoring rich content. Write
-content to a temporary file and pass `--file`; do not risk shell interpolation
-of tabs, markup, or user text.
-
-## Prepared validators
-
-Request only the validator for the planned write:
+## Find and read
 
 ```sh
-nodex read --json --prepare title.set @PAGE_ID
-nodex read --json --prepare document.replace @PAGE_ID
-nodex read --json --prepare page.delete @PAGE_ID
-nodex read --json --prepare page.move --view @VIEW_ID @PAGE_ID
+nodex sql query 'SELECT page_id,title FROM pages WHERE title LIKE :title' --param 'title="%launch%"'
+nodex sql query 'SELECT page_id,nested_markdown,body_etag FROM page_documents WHERE page_id=:id' --param 'id="PAGE_ID"'
+nodex sql query 'SELECT title,title_etag,file_manifest_revision,intrinsic_properties FROM pages WHERE page_id=:id' --param 'id="PAGE_ID"'
 ```
 
-Use the returned narrow ETag only with that operation. After a conflict, reread
-and decide again.
+Use the SQL reference for filtering multiple bodies or joining Source values.
+`read PAGE_ID` is a convenient single-Page text read; `--json read` returns content
+with validators, and `read --meta` returns canonical metadata. `search` gives
+ranked discovery evidence; `rg` serves exact regex workflows. Neither snippets
+nor `sed` line slices are complete editing baselines. `ls`, `tree` and `history`
+remain terminal conveniences with their declared bounds/continuations.
+Resolve names or Page keys to stable IDs before writes and links.
 
-Do not place `LAB-13` into a structured `pageId` value or replace `@PAGE_ID` in
-the write examples below. Page keys are human CLI selectors; Core mutations and
-their validators remain bound to canonical IDs.
+## Direct edits
 
-## Page workflows
-
-Create a Page under an authorized parent:
+Append without creating a draft or temporary file:
 
 ```sh
-nodex page create --json \
-  --parent page:@PARENT_PAGE_ID \
-  --title "Launch plan" \
-  --file /tmp/launch-plan.nested.md \
-  --idempotency-key page-create-launch-plan-v1
+nodex page insert PAGE_ID <<'BODY'
+## Next steps
+
+- Finish the release checks.
+BODY
 ```
 
-Replace a complete body:
+Use `--at start`, `before:BLOCK_ID`, `after:BLOCK_ID`,
+`inside-start:BLOCK_ID`, or `inside-end:BLOCK_ID` for explicit placement.
+
+For a precise text edit, copy the exact old fragment from the read result,
+including any Nested Markdown identity markers, and supply enough context to
+identify it uniquely:
 
 ```sh
-nodex page replace --json @PAGE_ID \
-  --file /tmp/revised.nested.md \
-  --if-match 'NARROW_ETAG' \
-  --idempotency-key page-replace-PAGE_ID-v1
+nodex patch <<'PATCH'
+*** Begin Patch
+*** Update Page: PAGE_ID
+@@
+-Release date: Friday.
++Release date: Monday.
+*** End Patch
+PATCH
 ```
 
-Set a title:
+A missing or ambiguous old fragment requires reading and locating the target
+again. It is not a reason to replace the whole Page.
 
 ```sh
-nodex page title set --json @PAGE_ID \
-  --value "Launch plan" \
-  --if-match 'NARROW_ETAG' \
-  --idempotency-key page-title-PAGE_ID-launch-plan-v1
+nodex page rename PAGE_ID 'Release checklist' --if-match TITLE_ETAG
+nodex page create --parent PARENT_PAGE_ID --title 'Release checklist' <<'BODY'
+- Verify the package.
+- Verify the rollback procedure.
+BODY
 ```
 
-Delete only after explicit user intent:
+SQL returns `title_etag`/`body_etag`; structured `read` also returns those validators. Complete replacement uses
+`page replace PAGE_ID --if-match BODY_ETAG` with stdin or `--file` and a complete
+body. Page deletion requires explicit user intent and
+`page prepare PAGE_ID --operation delete`, followed by
+`page delete PAGE_ID --if-match PAGE_ETAG` using `validators.page_etag`. Structural ownership cannot be
+changed by deleting or fabricating owning shells in ordinary text edits.
+
+For native Block edits, get the Block ID and its compatible ETag from the
+appropriate representation. `block update --patch-json -` and
+`block insert --block-json -` read typed JSON from stdin; the same flags accept
+regular files. Their payload schemas are available with `--help-schema input`. Do not place an
+inline JSON string where a file path is expected.
+
+## Substantial rewrites
 
 ```sh
-nodex page delete --json @PAGE_ID \
-  --if-match 'NARROW_ETAG' \
-  --idempotency-key page-delete-PAGE_ID-v1
+nodex draft create PAGE_ID --output ./rewrite
+# Edit ./rewrite/work/body.nested.md with normal file tools.
+nodex draft diff ./rewrite
+nodex draft apply ./rewrite
 ```
 
-Use `nodex patch --json --file PATCH_FILE --idempotency-key KEY` for exact,
-multi-edit Page changes when the patch contract is the clearest expression of
-intent. Prefer semantic `page` or `block` commands for one resource.
+Edit only the work files; keep the immutable base (including Block identity
+correspondence) and manifest intact. Apply preserves unaffected Block identities
+and safely corresponding edits. It never falls back to whole-body replacement.
+Conflicting, ambiguous or oversized changes fail atomically and retain work files;
+read current content and reassess, or use explicit Block operations for structure
+that Markdown cannot express safely. Use `page replace` only when complete body
+replacement is intended, never merely to get past a failed draft.
 
-## Stable Block edits
+`draft diff` compares local files, not current applicability. Retry unchanged
+pending work with the same draft; drafts own their retry identity. Wait before
+apply only when the user requested review or the active policy requires it.
 
-Use Block commands only after reading the Page representation that supplies the
-stable Block ID and compatible ETag. Examples:
+## Page attachments and shared Files
+
+Library owns Files. A Page may have entries at logical paths and independent
+File references in its body. Paths organize attachments without creating Pages
+or durable folders. Read the Page manifest revision even when there are no File uses:
 
 ```sh
-nodex block update --json @PAGE_ID \
-  --block @BLOCK_ID \
-  --patch-json '{"content":[{"type":"text","text":"Updated"}]}' \
-  --if-match 'BLOCK_ETAG' \
-  --idempotency-key block-update-BLOCK_ID-v1
+nodex sql query 'SELECT file_manifest_revision FROM pages WHERE page_id=:id' --param 'id="PAGE_ID"'
+nodex sql query 'SELECT file_id,path,default_name,mime_type,byte_length FROM page_files WHERE page_id=:id' --param 'id="PAGE_ID"'
+nodex page file put PAGE_ID --path exports/summary.csv \
+  --from ./summary.csv --if-manifest MANIFEST_REVISION
+nodex page file read PAGE_ID --path exports/summary.csv --output ./download.csv
+nodex page file rename-path PAGE_ID --file-id FILE_ID \
+  --path reports/summary.csv --if-manifest MANIFEST_REVISION
+nodex page file remove PAGE_ID --file-id FILE_ID --if-manifest MANIFEST_REVISION
 ```
 
-For insert/move positions, pass the exact `--at` selector accepted by current
-machine help. Run `nodex --json --help` when constructing an uncommon command;
-do not infer flags from old documentation.
+Removal detaches this entry; it retains the File and independent body uses.
+`page file replace-entry` imports a new File and retargets only this entry;
+`file replace` updates shared bytes for every use and requires direct File
+permission, current File revision, and head version. They are different intents.
 
-## Retry and verification
+Use `file import --from PATH` for an independent Library File. Inspect direct
+File metadata with `SELECT revision,head_version FROM files WHERE file_id=:id`,
+retained versions through `file_versions`, and restore with `file restore` using
+the observed revision/head conditions. Page authority does not grant independent
+File history or shared writes. Binary reads can use raw stdout only when the caller
+preserves bytes; explicit JSON downloads require `--output PATH`.
 
-An idempotency key names one logical mutation, not one process attempt. Reuse it
-after transport or response loss. Change it when the intended content,
-destination, or operation changes. Treat a duplicate receipt as success for the
-original intent, then verify the returned resource identity and revisions.
+Keep disposable intermediates in the ordinary Agent workspace. To open a
+result, use `nodex open page PAGE_ID`; use `--print` to obtain its canonical
+link without opening a window. A saved script is data until the user authorizes
+execution under the Agent's ordinary execution policy.

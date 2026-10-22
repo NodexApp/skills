@@ -3,11 +3,11 @@
   "distribution": "NodexApp/skills",
   "product": {
     "name": "Nodex",
-    "releaseVersion": "0.3.0"
+    "releaseVersion": "0.4.0"
   },
   "source": {
     "repository": "junyudev/nodex",
-    "ref": "v0.3.0"
+    "ref": "v0.4.0"
   },
   "agentInterface": {
     "minimumRevision": 1,
@@ -17,9 +17,9 @@
     {
       "name": "nodex",
       "path": "skills/nodex",
-      "treeSha256": "6736f31287fa674203a70193648ddf823dc317917219626fd453aeb642a00090",
+      "treeSha256": "201df4ce50c97e327597dbb9bf30ffb58b5da6363b9e2c7b38b41bf0ee04d100",
       "fileCount": 7,
-      "totalBytes": 27141
+      "totalBytes": 27430
     }
   ]
 }

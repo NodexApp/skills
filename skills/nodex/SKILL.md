@@ -1,6 +1,6 @@
 ---
 name: nodex
-description: Read, search, edit, organize, or open Nodex Pages; query Pages, Data Sources and saved Views with SQL; configure schemas and Views; update properties; and manage Library Files and Page attachments through the Nodex CLI.
+description: Read, search, edit, organize, or open Nodex Pages; query Pages, Data Sources and saved Views with SQL; configure schemas and Views; update properties; manage Library Files and Page attachments; and configure standing Automations through the Nodex CLI.
 ---
 
 # Nodex
@@ -47,6 +47,48 @@ Use known task context before asking the user. A Page belongs to the Library;
 its ID does not select an access Project. Preserve the host's Profile even after
 changing directories. If access is denied, report the limitation in that
 context rather than selecting another Project to bypass it.
+
+## Inspect external Sources
+
+Use `sources list` for configured connections, `sources status` for read positions
+and open problems, and `sources triggers --thread <url>` for recent observations.
+Page older Triggers with `--before` and limit a window with `--limit` (1–100).
+These commands are read-only. `page show <page>` lists its followed threads and
+unresolved GitHub deliveries. Managed chats use `follow_thread` for verified
+context and `hand_back_message` when the current inbound update belongs elsewhere.
+The local Owner configures Sources in Settings; change Source configuration only
+when the person asks. Open Problems offer Reconnect, Retry
+or Open card in the Inbox; Activity records routing, milestones, delivery, replies
+and recovery. Only Nodex's Coordinator uses `reply_to_origin { pageId, body }`, at
+most 100 words, once to acknowledge work starting or announce its result ready or
+merged. Never use it for routine progress or repeat the same acknowledgement or
+result. Its origin address is fixed by the Page.
+
+## Manage Automations
+
+Use `automations list` to discover Automations and `automations show <id>` before changing one.
+Clock Automations use an explicit timezone and an execution target. Dry run records
+what would happen, Ask first waits in the Inbox, and Run starts work. Create or
+replace a definition with `automations create|update --file -`; consult that command's
+`--help-schema input` for its typed JSON. Updates, pause, resume and deletion
+require the observed `automation_revision` as `--if-revision`. Replacement also carries the observed lifecycle as
+`--status active|paused`.
+
+You act with the authority of the person you work for. Create Automations as Ask first;
+choose Run, or switch one to Run, only when the person asked for unattended runs or clearly
+wants them, and ask when unsure. Only an Automation's Owner can choose Run, change its mode,
+edit it while set to Run or run it now. For another Member's Automation, propose the change
+with `automations_update` using `suggested_create` or `suggested_update` for its Owner to
+review. Preserve scope, Owner, timezone and exact Agent binding in proposals.
+`automations run <id>` creates one manual dispatch, or confirms an existing waiting
+Ask first decision; confirm a waiting decision only when the person asked you to. Reuse
+its idempotency key to retry the same dispatch.
+
+## Act on Page work for the person
+
+`page accept`, `work pause|resume` and `page properties set --auto-start` act for the
+person you work for. Accept your own work only when they told you to, resume work they
+paused only when they ask, and set Start automatically only when they asked.
 
 ## Work directly
 

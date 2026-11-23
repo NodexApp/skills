@@ -3,11 +3,11 @@
   "distribution": "NodexApp/skills",
   "product": {
     "name": "Nodex",
-    "releaseVersion": "0.5.10"
+    "releaseVersion": "0.5.11"
   },
   "source": {
     "repository": "junyudev/nodex",
-    "ref": "v0.5.10"
+    "ref": "v0.5.11"
   },
   "agentInterface": {
     "minimumRevision": 1,

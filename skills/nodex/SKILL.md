@@ -10,6 +10,8 @@ Run `nodex` directly for Nodex content, including from scripts. Use
 If a connection or identity error stops a batch, follow its recovery before
 resuming. Keep the managed binding so Core records Agent authorship.
 
+When a reply names a Nodex Page, Database View or chat the person can open, use a Markdown reference. Copy the tool’s `url` when it provides one. Use `<nodex://pages/ID>` or `<nodex://sessions/ID>` for live titles, `<nodex://views/ID>` for a View, or `[text](nodex://pages/ID)` when your own words read better. Append `#BLOCK_ID` to a Page URL to point to one Block. Write references outside code spans.
+
 ## Choose a route for the task
 
 | Task                                          | Default route                                                                                               |
@@ -57,14 +59,15 @@ and open problems, and `sources triggers --thread <url>` for recent observations
 Page older Triggers with `--before` and limit a window with `--limit` (1–100).
 These commands are read-only. `page show <page>` lists its followed threads and
 unresolved GitHub deliveries. Managed chats use `follow_thread` for verified
-context and `hand_back_message` when the current inbound update belongs elsewhere.
+context or, with `role: own_pr`, for the PR they open, and `hand_back_message`
+when the current inbound update belongs elsewhere.
 The local Owner configures Sources in Settings; change Source configuration only
 when the person asks. Open Problems offer Reconnect, Retry
 or Open card in the Inbox; Activity records routing, milestones, delivery, replies
-and recovery. Only Nodex's Coordinator uses `reply_to_origin { pageId, body }`, at
-most 100 words, once to acknowledge work starting or announce its result ready or
-merged. Never use it for routine progress or repeat the same acknowledgement or
-result. Its origin address is fixed by the Page.
+and recovery. If you are the root Agent of the Page's active chat, use
+`reply_to_origin { pageId, body }` for a GitHub request. Send at most 100 words per
+reply: one acknowledgement naming what you will do when work starts, and one
+result when it is ready or merged. The Page supplies the origin address.
 
 ## Manage Automations
 
